@@ -33,7 +33,7 @@ public class RefreshToken {
      * <p>서비스 간 결합도를 낮추기 위해 연관관계 매핑 대신 ID 값만 직접 저장합니다.</p>
      */
     @Column(nullable = false, unique = true)
-    Long memberId;
+    Long memberNo;
 
     /**
      * 실제 발급된 JWT 리프레시 토큰 문자열
@@ -47,8 +47,8 @@ public class RefreshToken {
     @Column(nullable = false)
     LocalDateTime expiryDate;
 
-    public RefreshToken(Long memberId, String token, LocalDateTime expiryDate) {
-        this.memberId = memberId;
+    public RefreshToken(Long memberNo, String token, LocalDateTime expiryDate) {
+        this.memberNo = memberNo;
         this.token = token;
         this.expiryDate = expiryDate;
     }

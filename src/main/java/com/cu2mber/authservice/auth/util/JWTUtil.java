@@ -1,5 +1,6 @@
 package com.cu2mber.authservice.auth.util;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Jwts;
@@ -21,15 +22,15 @@ public class JWTUtil {
     }
 
     /**
-     * JWT에서 username 추출
+     * JWT에서 memberNo(멤버번호) 추출
      */
-    public String getUsername(String token) {
+    public Long getMemberNo(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseClaimsJws(token)
                 .getPayload()
-                .get("username", String.class);
+                .get("memberNo", Long.class);
     }
 
     /**
@@ -48,26 +49,36 @@ public class JWTUtil {
      * JWT 만료 여부 확인
      */
     public Boolean isTokenExpired(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getPayload()
-                .getExpiration()
-                .before(new Date());
+        try {
+            return Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getPayload()
+                    .getExpiration()
+                    .before(new Date());
+        } catch (ExpiredJwtException e) {
+            // 토큰이 만료된 경우
+            return true;
+        }
     }
 
     /**
      * JWT 생성 메서드
-     * - memberId, role(권한), 만료 시간(expiredMs)을 포함한 JWT 발급
+     * @param category  토큰 종류 (access, refresh)
+     * @param memberNo  사용자 고유 번호
+     * @param role      사용자 권한
+     * @param expiredMs 만료 시간 (밀리초)
+     * @return 생성된 JWT 문자열
      */
-    public String createJwt(Long memberId, String role, Long expiredMs) {
+    public String createJwt(String category, Long memberNo, String role, Long expiredMs) {
         return Jwts.builder()
-                .claim("memberId", memberId)
+                .claim("category", category)
+                .claim("memberNo", memberNo)
                 .claim("role", role)
-                .issuedAt(new Date(System.currentTimeMillis())) // 발급 시간
-                .expiration(new Date(System.currentTimeMillis() + expiredMs)) // 만료 시간
-                .signWith(secretKey) // 비밀키를 사용하여 서명
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiredMs))
+                .signWith(secretKey)
                 .compact();
     }
 }

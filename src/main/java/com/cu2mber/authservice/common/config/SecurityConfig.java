@@ -1,5 +1,6 @@
 package com.cu2mber.authservice.common.config;
 
+import com.cu2mber.authservice.auth.util.JWTFilter;
 import com.cu2mber.authservice.auth.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,8 +31,7 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        // 토큰 발급 API(member-service가 호출함)와 토큰 갱신 API는 인증 없이 접근 허용
-                        .requestMatchers("/auth/issue", "/auth/refresh", "/signUp").permitAll()
+                        .requestMatchers("/auth/issue", "/auth/refresh", "/auth/logout").permitAll()
                         .anyRequest().authenticated())
 
                 // 갱신 요청 등을 보낼 때 이미 가진 토큰이 유효한지 확인하는 필터만 유지
@@ -42,7 +42,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS 설정은 유지 (Gateway가 하지만, 서비스 레벨에서도 해두면 안전합니다)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         return request -> {
