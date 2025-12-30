@@ -1,0 +1,60 @@
+### 1. 최초 토큰 발급 (Issue)
+# 로그인 성공 시 member-service가 호출하는 로직
+POST http://localhost:8080/auth/issue
+Content-Type: application/json
+
+{
+  "memberNo": 1,
+  "role": "ROLE_USER"
+}
+
+> {%
+    // 응답에서 받은 토큰을 변수에 저장합니다.
+    client.global.set("access_token", response.body.accessToken);
+    client.global.set("refresh_token", response.body.refreshToken);
+%}
+
+
+### 2. 액세스 토큰 재발급 (Refresh)
+# Access Token이 만료되었을 때 Refresh Token으로 갱신
+POST http://localhost:8080/auth/refresh
+Refresh-Token: {{refresh_token}}
+
+> {%
+    client.global.set("access_token", response.body.accessToken);
+%}
+
+
+### 3. 로그아웃 (Logout)
+# DB에서 리프레시 토큰 삭제
+POST http://localhost:8080/auth/logout
+Refresh-Token: {{refresh_token}}
+
+
+### 4. 권한이 필요한 페이지 접근 테스트 (JWTFilter 확인)
+# 1번이나 2번 실행 후 변수에 저장된 access_token을 사용
+GET http://localhost:8080/any-secure-api
+Authorization: Bearer {{access_token}}
+
+
+### 5. 토큰 발급 (만료 시간이 1초인 토큰)
+POST http://localhost:8080/auth/issue
+Content-Type: application/json
+
+{
+  "memberNo": 2,
+  "role": "ROLE_USER"
+}
+
+> {%
+    client.global.set("expired_access_token", response.body.accessToken);
+%}
+
+
+### 6. 1초 기다린 후, 인증이 필요한 API 호출하기
+GET http://localhost:8080/any-secure-api
+Authorization: Bearer {{expired_access_token}}
+
+### 7. 로그인 안 해도 접근할 수 있는지 확인
+GET http://localhost:8081/api/events
+Accept: application/json

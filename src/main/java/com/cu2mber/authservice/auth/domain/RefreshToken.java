@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * JWT 리프레시 토큰 정보를 관리하는 엔티티 클래스입니다.
+ * JWT 리프레시 토큰 정보를 관리하는 엔티티 클래스
  * <p>
  * 사용자의 고유 식별자와 발급된 리프레시 토큰 값을 매핑하여 저장하며,
  * 액세스 토큰 만료 시 재발급을 위한 검증 용도로 사용됩니다.

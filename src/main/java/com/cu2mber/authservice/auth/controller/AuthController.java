@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 인증 및 토큰 관리 API
+ * 인증 및 토큰 관리 API 컨트롤러
  */
 @RestController
 @RequestMapping("/auth")

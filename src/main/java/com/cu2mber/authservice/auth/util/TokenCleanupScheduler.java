@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+/**
+ * 리프레시 토큰 청소 스케줄러 클래스입니다.
+ * <p>데이터베이스의 무결성을 유지하고 불필요한 데이터를 정리하기 위해 정기적으로 만료된 토큰을 삭제합니다.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j

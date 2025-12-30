@@ -9,6 +9,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/**
+ * JWT 생성 및 검증 유틸리티
+ * HS256 알고리즘을 사용하여 토큰의 생명주기를 관리합니다.
+ */
 @Component
 public class JWTUtil {
 
@@ -22,7 +26,7 @@ public class JWTUtil {
     }
 
     /**
-     * JWT에서 memberNo(멤버번호) 추출
+     * JWT에서 사용자 정보(memberNo) 추출
      */
     public Long getMemberNo(String token) {
         return Jwts.parser()
@@ -46,7 +50,7 @@ public class JWTUtil {
     }
 
     /**
-     * JWT 만료 여부 확인
+     * 토큰 유효 기간 및 만료 여부 확인
      */
     public Boolean isTokenExpired(String token) {
         try {
@@ -64,14 +68,14 @@ public class JWTUtil {
     }
 
     /**
-     * JWT 생성 메서드
+     * 신규 액세스/리프레시 토큰 발급
      * @param category  토큰 종류 (access, refresh)
      * @param memberNo  사용자 고유 번호
      * @param role      사용자 권한
      * @param expiredMs 만료 시간 (밀리초)
      * @return 생성된 JWT 문자열
      */
-    public String createJwt(String category, Long memberNo, String role, Long expiredMs) {
+    public String createToken(String category, Long memberNo, String role, Long expiredMs) {
         return Jwts.builder()
                 .claim("category", category)
                 .claim("memberNo", memberNo)

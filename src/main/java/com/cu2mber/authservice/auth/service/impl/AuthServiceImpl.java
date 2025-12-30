@@ -8,11 +8,14 @@ import com.cu2mber.authservice.auth.service.AuthService;
 import com.cu2mber.authservice.auth.util.JWTUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+/**
+ * AuthService 인터페이스의 구현체
+ * <p>JWTUtil을 통한 토큰 생성 및 검증, RefreshTokenRepository를 통한 DB 관리를 수행합니다.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,17 +25,14 @@ public class AuthServiceImpl implements AuthService {
     private final JWTUtil jwtUtil;
 
     /**
-     * 최초 로그인 시 Access Token과 Refresh Token을 생성하고, Refresh Token을 DB에 저장합니다.
-     *
-     * @param memberNo 사용자 고유 번호
-     * @param role     사용자 권한
-     * @return 생성된 토큰 세트 (Access, Refresh)
+     * {@inheritDoc}
+     * <p>JWTUtil을 사용해 토큰을 생성하며, 생성된 Refresh Token은 DB(Amazon RDS)에 저장합니다.</p>
      */
     @Override
     public TokenResponse createTokens(Long memberNo, String role) {
         // JWTUtil을 사용하여 토큰 생성
-        String accessToken = jwtUtil.createJwt("access", memberNo, role, 1800000L); // 30분
-        String refreshToken = jwtUtil.createJwt("refresh", memberNo, role, 1209600000L); // 14일
+        String accessToken = jwtUtil.createToken("access", memberNo, role, 1800000L); // 30분
+        String refreshToken = jwtUtil.createToken("refresh", memberNo, role, 1209600000L); // 14일
 
         // 생성된 Refresh Token을 RDS에 저장
         saveRefreshToken(memberNo, refreshToken);
@@ -41,10 +41,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 리프레시 토큰의 유효성을 검증하고 새로운 액세스 토큰을 발급합니다.
-     *
-     * @param refreshToken 사용자가 전달한 리프레시 토큰
-     * @return 새로운 액세스 토큰
+     * {@inheritDoc}
+     * <p>DB에 저장된 토큰과 대조 및 JWT 만료 여부를 체크한 후 새로운 토큰을 생성합니다.</p>
      */
     @Override
     public AccessToken refreshAccessToken(String refreshToken) {
@@ -65,16 +63,14 @@ public class AuthServiceImpl implements AuthService {
         String userRole = jwtUtil.getRole(refreshToken);
 
         // 유효하다면 새로운 Access Token 발급
-        String newAccessToken = jwtUtil.createJwt("access", storedToken.getMemberNo(), userRole, 1800000L);
+        String newAccessToken = jwtUtil.createToken("access", storedToken.getMemberNo(), userRole, 1800000L);
 
         return new AccessToken(newAccessToken);
     }
 
     /**
-     * 사용자의 리프레시 토큰을 삭제하여 로그아웃 처리를 수행합니다.
-     * <p>DB에서 토큰이 삭제되면 더 이상 액세스 토큰 갱신이 불가능해집니다.</p>
-     *
-     * @param refreshToken 삭제할 리프레시 토큰 문자열
+     * {@inheritDoc}
+     * <p>DB에서 해당 토큰 존재 여부를 확인한 후 삭제 처리를 진행합니다.</p>
      */
     @Override
     public void logout(String refreshToken) {
