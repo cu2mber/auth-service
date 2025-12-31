@@ -6,6 +6,8 @@ import com.cu2mber.authservice.auth.dto.TokenResponse;
 import com.cu2mber.authservice.auth.repository.RefreshTokenRepository;
 import com.cu2mber.authservice.auth.service.AuthService;
 import com.cu2mber.authservice.auth.util.JWTUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,7 +44,8 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * {@inheritDoc}
-     * <p>DB에 저장된 토큰과 대조 및 JWT 만료 여부를 체크한 후 새로운 토큰을 생성합니다.</p>
+     * <p>전달받은 리프레시 토큰의 유효성(DB 대조 및 JWT 만료/변조)을 검증하고,
+     * 검증 성공 시 새로운 액세스 토큰을 생성하여 반환합니다.</p>
      */
     @Override
     public AccessToken refreshAccessToken(String refreshToken) {
@@ -52,20 +55,19 @@ public class AuthServiceImpl implements AuthService {
 
         // JWT 자체 만료 확인
         try {
-            if (jwtUtil.isTokenExpired(refreshToken)) {
-                throw new RuntimeException("리프레시 토큰이 만료되었습니다. 다시 로그인해주세요.");
-            }
+            Claims claims = jwtUtil.getPayload(refreshToken);
+
+            String userRole = claims.get("role", String.class);
+
+            String newAccessToken = jwtUtil.createToken("access", storedToken.getMemberNo(), userRole, 1800000L);
+
+            return new AccessToken(newAccessToken);
+
+        } catch (ExpiredJwtException e) {
+            throw new RuntimeException("리프레시 토큰이 만료되었습니다. 다시 로그인해주세요.");
         } catch (Exception e) {
-            // 토큰 파싱 중 에러(위조 등)가 나도 예외 처리
             throw new RuntimeException("유효하지 않은 토큰입니다.");
         }
-
-        String userRole = jwtUtil.getRole(refreshToken);
-
-        // 유효하다면 새로운 Access Token 발급
-        String newAccessToken = jwtUtil.createToken("access", storedToken.getMemberNo(), userRole, 1800000L);
-
-        return new AccessToken(newAccessToken);
     }
 
     /**

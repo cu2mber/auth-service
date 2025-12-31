@@ -1,6 +1,6 @@
 package com.cu2mber.authservice.auth.util;
 
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Jwts;
@@ -26,45 +26,28 @@ public class JWTUtil {
     }
 
     /**
-     * JWT에서 사용자 정보(memberNo) 추출
+     * JWT를 파싱하여 내부의 Claims(Payload)를 추출합니다.
+     * <p>
+     * 이 메서드는 단 한 번의 호출로 다음과 같은 작업을 수행합니다.
+     * <ul>
+     * <li>토큰의 서명(Signature) 위조 여부 검증</li>
+     * <li>토큰의 유효 기간 및 만료 여부(Expiration) 자동 확인</li>
+     * </ul>
+     * 만약 토큰이 만료되었거나 구조가 유효하지 않을 경우, 예외를 발생시키므로
+     * 호출 측에서 추가적인 만료 체크 로직을 구현할 필요가 없습니다.
+     * </p>
+     *
+     * @param token 추출할 JWT 문자열
+     * @return 추출된 Claims(사용자 정보 및 권한 등)
+     * @throws io.jsonwebtoken.ExpiredJwtException 토큰의 유효 기간이 만료된 경우 발생
+     * @throws io.jsonwebtoken.JwtException 토큰이 변조되었거나 형식이 잘못된 경우 발생
      */
-    public Long getMemberNo(String token) {
+    public Claims getPayload(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseClaimsJws(token)
-                .getPayload()
-                .get("memberNo", Long.class);
-    }
-
-    /**
-     * JWT에서 role(권한) 추출
-     */
-    public String getRole(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getPayload()
-                .get("role", String.class);
-    }
-
-    /**
-     * 토큰 유효 기간 및 만료 여부 확인
-     */
-    public Boolean isTokenExpired(String token) {
-        try {
-            return Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getPayload()
-                    .getExpiration()
-                    .before(new Date());
-        } catch (ExpiredJwtException e) {
-            // 토큰이 만료된 경우
-            return true;
-        }
+                .getPayload();
     }
 
     /**

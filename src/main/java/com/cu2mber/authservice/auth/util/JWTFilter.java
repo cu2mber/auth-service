@@ -1,5 +1,7 @@
 package com.cu2mber.authservice.auth.util;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,22 +45,23 @@ public class JWTFilter extends OncePerRequestFilter {
 
         // 토큰 만료 여부 확인
         try {
-            if (jwtUtil.isTokenExpired(token)) {
-                setResponse(response, "AccessToken has expired", HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
+            Claims claims = jwtUtil.getPayload(token);
+
+            Long memberNo = claims.get("memberNo", Long.class);
+            String role = claims.get("role", String.class);
+
+            // 인증 객체 생성 및 설정
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(memberNo, null, List.of(new SimpleGrantedAuthority(role)));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        } catch (ExpiredJwtException e) {
+            setResponse(response, "AccessToken has expired", HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         } catch (Exception e) {
             setResponse(response, "Invalid Token", HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-
-        Long memberNo = jwtUtil.getMemberNo(token);
-        String role = jwtUtil.getRole(token);
-
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(memberNo, null, List.of(new SimpleGrantedAuthority(role)));
-
-        SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
     }
